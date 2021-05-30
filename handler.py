@@ -1,4 +1,5 @@
 import json
+from pyasn1_modules.rfc2459 import TeletexCommonName
 import telegram
 import os
 import logging
@@ -8,8 +9,12 @@ from googleapiclient.discovery import build
 
 
 def image_search(query):
+    # Image Search function:
+    #   - Takes in a string queery name
+    #   - Returns top google images url
     GOOGLE_DEVKEY = os.environ.get("GOOGLE_DEVKEY")
     GOOGLE_CX = os.environ.get("GOOGLE_CX")
+
     service = build("customsearch", "v1", developerKey=GOOGLE_DEVKEY)
 
     res = (service.cse().list(
@@ -31,6 +36,7 @@ if logger.handlers:
         logger.removeHandler(handler)
 logging.basicConfig(level=logging.INFO)
 
+# OK Webhook Response
 OK_RESPONSE = {
     "statusCode": 200,
     "headers": {
@@ -38,18 +44,17 @@ OK_RESPONSE = {
     },
     "body": json.dumps("ok"),
 }
+
+# ERROR Webhook Response
 ERROR_RESPONSE = {
     "statusCode": 400,
     "body": json.dumps("Oops, something went wrong!")
 }
 
 
+# Configures the bot with a Telegram Token.
+# Returns a bot instance.
 def configure_telegram():
-    """
-    Configures the bot with a Telegram Token.
-
-    Returns a bot instance.
-    """
 
     TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
     if not TELEGRAM_TOKEN:
@@ -59,6 +64,7 @@ def configure_telegram():
     return telegram.Bot(TELEGRAM_TOKEN)
 
 
+# Uses plantNet API to identify the specific plant in the image
 def get_plant(url):
 
     img = requests.get(url).content
@@ -80,37 +86,42 @@ def get_plant(url):
     family = results["species"]["family"]["scientificNameWithoutAuthor"]
     scientificName = results["species"]["scientificNameWithoutAuthor"]
     confidence = round((float(results["score"]) * 100), 1)
-    commonNamesString = ""
 
+    url = image_search(scientificName)
+
+    return commonNames, family, scientificName, confidence, url
+
+
+# Format all the text information from the PlantNet identification
+def format_text(commonNames, family, scientificName, confidence):
+
+    commonNamesString = ""
     if len(commonNames) > 1:
         for name in commonNames:
             commonNamesString += f"  • {name}\n"
-        if confidence < 12:
+        if confidence > 20:
             out = f"This is <b>{scientificName}</b>, of the <b>{family}</b> family. \n\n<b>This plant is also known as:</b> \n{commonNamesString}"
         else:
             out = f"I'm {confidence}% sure this is <b>{scientificName}</b>, of the <b>{family}</b> family. \n\n<b>This plant is also known as:</b> \n{commonNamesString}"
 
     elif len(commonNames) == 1:
         commonNamesString = f"  • {commonNames[0]}"
-        if confidence < 12:
+        if confidence > 20:
             out = f"This is <b>{scientificName}</b>, of the <b>{family}</b> family. \n\n<b>This plant is also known as:</b> \n{commonNamesString}"
         else:
             out = f"I'm {confidence}% sure this is <b>{scientificName}</b>, of the <b>{family}</b> family. \n\n<b>This plant is also known as:</b> \n{commonNamesString}"
 
     else:
 
-        if confidence < 12:
+        if confidence > 20:
             out = f"This is <b>{scientificName}</b>, of the <b>{family}</b> family."
         else:
             out = f"I'm {confidence}% sure this is <b>{scientificName}</b>, of the <b>{family}</b> family."
 
-    url = image_search(scientificName)
-
-    return out, url
+    return out
 
 
 def get_file_url(update):
-
     TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 
     file_id = update["message"]["photo"][-1]["file_id"]
@@ -127,8 +138,6 @@ def webhook(event, context):
     Runs the Telegram webhook.
     """
 
-    # TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-
     bot = configure_telegram()
     logger.info("Event: {}".format(event))
 
@@ -137,34 +146,51 @@ def webhook(event, context):
         update = telegram.Update.de_json(json.loads(event.get("body")), bot)
         chat_id = update.message.chat.id
         text = update.message.text
+    try:
+        if text:
+            if text == "/start":
+                text = f"""Hello, <b>{update['message']['chat']['first_name']}</b>! \nI'm a bot designed to help you identify any plant you want. \nJust send me a photo and I will be more than glad to tell you what plant it is!"""
 
-        if text == "/start":
-            text = f"""Hello, <b>{update['message']['chat']['first_name']}</b>! \nI'm a bot designed to help you identify any plant you want. \nJust send me a photo and I will be more than glad to tell you what plant it is!"""
-        else:
-            try:
-                file_url = get_file_url(update)
-                text, url = get_plant(file_url)
-
+            elif text[:5] == "/find":
+                url = image_search(text[5:])
                 bot.send_photo(
                     chat_id=chat_id,
                     photo=url,
-                    caption=text,
                     parse_mode=telegram.ParseMode.HTML,
                 )
-
-            except Exception as error:
-                text = "I'm sorry but I could not Identify this plant :/"
-                error_string = repr(error)
-                bot.sendMessage(chat_id=chat_id, text=text)
-                bot.sendMessage(chat_id=chat_id,
-                                text=f"The reported error is: {error_string}")
                 return OK_RESPONSE
+            else:
+                text = f"Sorry <b>{update['message']['chat']['first_name']}</b>, I'm not built to be able to handle regular text. But you can use the '/find' command to get me to look for any plant."
 
-        logger.info("Message sent")
+            bot.send_message(
+                chat_id=chat_id,
+                text=text,
+                parse_mode=telegram.ParseMode.HTML,
+            )
+            return OK_RESPONSE
+
+        else:
+            file_url = get_file_url(update)
+            commonNames, family, scientificName, confidence, url = get_plant(
+                file_url)
+            text = format_text(commonNames, family, scientificName, confidence)
+
+            bot.send_photo(
+                chat_id=chat_id,
+                photo=url,
+                caption=text,
+                parse_mode=telegram.ParseMode.HTML,
+            )
 
         return OK_RESPONSE
 
-    return ERROR_RESPONSE
+    except Exception as error:
+        text = "I'm sorry but I could not Identify this plant :/"
+        error_string = repr(error)
+        bot.sendMessage(chat_id=chat_id, text=text)
+        bot.sendMessage(chat_id=chat_id,
+                        text=f"The reported error is: {error_string}")
+        return OK_RESPONSE
 
 
 def set_webhook(event, context):
