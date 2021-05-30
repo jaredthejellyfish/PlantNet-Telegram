@@ -45,5 +45,5 @@ $ npm install serverless-python-requirements
 ### How to run
 - Rename ```example_serverless.env.yml``` to ```serverless.env.yml```.
 - Fill all the fields with the needed details you got from the steps above.
-- Update the bot with by running `serverless deploy` in your terminal.
+- Update the bot by running `serverless deploy` in your terminal.
 - Now message away!
