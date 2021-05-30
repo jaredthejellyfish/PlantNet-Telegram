@@ -1,13 +1,15 @@
 # PlantNet-Telegram
 A plant identification Telegram bot! ⚡🤖
 
+
+
 ## Usage
 
 ### What do I need?
 - A AWS key configured locally, see [here](https://serverless.com/framework/docs/providers/aws/guide/credentials/)
 - Python 3 (Tested with Python 3.9)
 - NodeJS (Tested with v8.9.0)
-- A Telegram account.
+- A Telegram account
 
 ### Install Requirements
 ```
@@ -28,14 +30,20 @@ $ npm install serverless-python-requirements
 - Create your search engine.
 - In the web form where you create/edit your custom search engine enable "Image search" option and for "Sites to search" option select "Search the entire web but emphasize included sites".
 - You can find the CX id titled as "Search engine ID".
-- Public URL also has the cx id in the Query param as ?cx=**
+- Public URL also has the cx id in the Query param as `?cx=**`
 
 ### Get PlantNet API Key
 - Follow the steps listed here [PlantNet API how to](https://my.plantnet.org/usage).
 
 ### Create Telegram Bot
-- Start a chat with the [BotFather](https://telegram.me/botfather)
-- Create a new bot with the command ```/newbot```
-- Specify a friendly name
-- Specify a username
-- Copy the access token
+- Start a chat with the [BotFather](https://telegram.me/botfather).
+- Create a new bot with the command ```/newbot```.
+- Specify a friendly name.
+- Specify a username.
+- Copy the access token.
+
+### How to run
+- Rename ```example_serverless.env.yml``` to ```serverless.env.yml```.
+- Fill all the fields with the needed details you got from the steps above.
+- Update the bot with by running `serverless deploy` in your terminal.
+- Now message away!
