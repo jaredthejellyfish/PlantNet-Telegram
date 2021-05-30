@@ -5,7 +5,7 @@ provider:
   runtime: python3.7
   environment:
     TELEGRAM_TOKEN: ${file(./serverless.env.yml):TELEGRAM_TOKEN, ''}
-    GOODLE_DEVKEY: ${file(./serverless.env.yml):GOODLE_DEVKEY, ''}
+    GOOGLE_DEVKEY: ${file(./serverless.env.yml):GOOGLE_DEVKEY, ''}
     GOOGLE_CX: ${file(./serverless.env.yml):GOOGLE_CX, ''}
     PLANTNET_KEY: ${file(./serverless.env.yml):PLANTNET_KEY, ''}
 
