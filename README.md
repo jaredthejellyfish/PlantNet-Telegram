@@ -1,4 +1,4 @@
-# Serverless Telegram Bot
+# PlantNet-Telegram
 This example demonstrates how to setup an echo Telegram Bot using the Serverless Framework ⚡🤖
 
 ## Usage
@@ -9,30 +9,13 @@ This example demonstrates how to setup an echo Telegram Bot using the Serverless
 - NodeJS. I tested with v8.9.0.
 - A Telegram account.
 
-### Installing
+### Install Requirements
 ```
 # Install the Serverless Framework
-$ npm install serverless -g
+$ npm install serverless
 
-# Install the necessary plugins
-$ npm install
+# Install the necessary plugin
+$ npm install serverless-python-requirements
 
-# Create and active a Python 3.7 venv
-$ python3.7 -m venv venv && souce venv/bin/activate
 
-# Get a bot from Telegram, sending this message to @BotFather
-$ /newbot
 
-# Put the token received into a file called serverless.env.yml, like this
-$ cat serverless.env.yml
-TELEGRAM_TOKEN: <your_token>
-
-# Deploy it!
-$ serverless deploy
-
-# With the URL returned in the output, configure the Webhook
-$ curl -X POST https://<your_url>.amazonaws.com/dev/set_webhook
-```
-
-Now, just start a conversation with the bot :)
-# PlantNet-Telegram

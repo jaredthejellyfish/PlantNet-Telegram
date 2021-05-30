@@ -1,0 +1,28 @@
+service: plantnet-telegram-bot
+
+provider:
+  name: aws
+  runtime: python3.7
+  environment:
+    TELEGRAM_TOKEN: ${file(./serverless.env.yml):TELEGRAM_TOKEN, ''}
+    GOODLE_DEVKEY: ${file(./serverless.env.yml):GOODLE_DEVKEY, ''}
+    GOOGLE_CX: ${file(./serverless.env.yml):GOOGLE_CX, ''}
+    PLANTNET_KEY: ${file(./serverless.env.yml):PLANTNET_KEY, ''}
+
+functions:
+  webhook:
+    handler: handler.webhook
+    events:
+      - http: POST /
+
+  set_webhook:
+    handler: handler.set_webhook
+    events:
+      - http: POST /set_webhook
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    pythonBin: python3
