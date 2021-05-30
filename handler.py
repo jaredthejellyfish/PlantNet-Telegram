@@ -51,7 +51,6 @@ ERROR_RESPONSE = {
     "body": json.dumps("Oops, something went wrong!")
 }
 
-
 # Configures the bot with a Telegram Token.
 # Returns a bot instance.
 def configure_telegram():
@@ -92,7 +91,8 @@ def get_plant(url):
     return commonNames, family, scientificName, confidence, url
 
 
-# Format all the text information from the PlantNet identification
+# Format all the text information from the PlantNet identification.
+# if the confidecnce level is under 20% it also makes the message show it.
 def format_text(commonNames, family, scientificName, confidence):
 
     commonNamesString = ""
@@ -121,6 +121,7 @@ def format_text(commonNames, family, scientificName, confidence):
     return out
 
 
+# Gets the file URL for the uploaded image in telegram.
 def get_file_url(update):
     TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 
@@ -133,24 +134,28 @@ def get_file_url(update):
     return file_url
 
 
+# Handles the telegram webhook
 def webhook(event, context):
-    """
-    Runs the Telegram webhook.
-    """
 
+    # Configures the bot
     bot = configure_telegram()
     logger.info("Event: {}".format(event))
 
+    # Detects if an update happens
     if event.get("httpMethod") == "POST" and event.get("body"):
         logger.info("Message received")
         update = telegram.Update.de_json(json.loads(event.get("body")), bot)
         chat_id = update.message.chat.id
         text = update.message.text
+
     try:
+        #Checks if the message contains text
         if text:
+            # Checks if it is the initial /start message
             if text == "/start":
                 text = f"""Hello, <b>{update['message']['chat']['first_name']}</b>! \nI'm a bot designed to help you identify any plant you want. \nJust send me a photo and I will be more than glad to tell you what plant it is!"""
 
+            # Runs the /find function
             elif text[:5] == "/find":
                 url = image_search(text[5:])
                 bot.send_photo(
@@ -159,6 +164,8 @@ def webhook(event, context):
                     parse_mode=telegram.ParseMode.HTML,
                 )
                 return OK_RESPONSE
+
+            # Handles the condition if text is not a command
             else:
                 text = f"Sorry <b>{update['message']['chat']['first_name']}</b>, I'm not built to be able to handle regular text. But you can use the '/find' command to get me to look for any plant."
 
@@ -169,6 +176,7 @@ def webhook(event, context):
             )
             return OK_RESPONSE
 
+        # Handles downloading the file and gathering all the informaiton
         else:
             file_url = get_file_url(update)
             commonNames, family, scientificName, confidence, url = get_plant(
@@ -184,6 +192,7 @@ def webhook(event, context):
 
         return OK_RESPONSE
 
+    # Handles errors and reports them to the user
     except Exception as error:
         text = "I'm sorry but I could not Identify this plant :/"
         error_string = repr(error)
@@ -192,12 +201,9 @@ def webhook(event, context):
                         text=f"The reported error is: {error_string}")
         return OK_RESPONSE
 
-
+# Sets the Telegram bot webhook.
 def set_webhook(event, context):
-    """
-    Sets the Telegram bot webhook.
-    """
-
+    
     logger.info("Event: {}".format(event))
     bot = configure_telegram()
     url = "https://{}/{}/".format(
