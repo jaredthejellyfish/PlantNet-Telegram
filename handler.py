@@ -8,9 +8,9 @@ from googleapiclient.discovery import build
 
 
 def image_search(query):
-    GOODLE_DEVKEY = os.environ.get("GOODLE_DEVKEY")
+    GOOGLE_DEVKEY = os.environ.get("GOOGLE_DEVKEY")
     GOOGLE_CX = os.environ.get("GOOGLE_CX")
-    service = build("customsearch", "v1", developerKey=GOODLE_DEVKEY)
+    service = build("customsearch", "v1", developerKey=GOOGLE_DEVKEY)
 
     res = (service.cse().list(
         q=query,
